@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Технологии{% endblock %}
+{% block title_name %}{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>Вот что я умею</h1>
+  <aside class="col-12 col-md-3">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        Python 3.8.10
+      </li>
+      <li class="list-group-item">
+        Django 2.2.16
+      </li>
+      <li class="list-group-item">
+        HTML5
+      </li>
+    </ul>
+  </aside>
+  <article class="col-12 col-md-9">
+  На этой странице вы можете ознакомиться со списком технологий, с помощью которых был создан данный проект
+    <img src="{% static 'img/mem.png' %}" width="900" height="630">
+  </article>
+</div>
+{% endblock %}
