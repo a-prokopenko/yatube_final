@@ -4,7 +4,7 @@ from django.views.decorators.cache import cache_page
 
 from . import utils
 from .forms import CommentForm, PostForm
-from .models import Group, Post, User, Follow
+from .models import Follow, Group, Post, User
 
 
 @cache_page(20, key_prefix='index_page')

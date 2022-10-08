@@ -7,7 +7,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-
 from ..models import Group, Post
 
 User = get_user_model()
@@ -81,7 +80,6 @@ class PostsFormTests(TestCase):
         self.assertEqual(post.author, new_user)
         self.assertEqual(post.group.id, form_data.get('group'))
         self.assertEqual(post.image, f'posts/{self.uploaded}')
-
 
     def test_post_edit_form_test(self):
         """Форма редактирования записи работает"""
