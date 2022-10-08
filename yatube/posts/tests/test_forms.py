@@ -70,16 +70,17 @@ class PostsFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        post = Post.objects.get(id=2)
         self.assertRedirects(
             response, reverse('posts:profile',
                               kwargs={'username': new_user})
         )
         self.assertEqual(Post.objects.count(), count_posts + 1)
-        self.assertEqual(post.text, form_data.get('text'))
-        self.assertEqual(post.author, new_user)
-        self.assertEqual(post.group.id, form_data.get('group'))
-        self.assertEqual(post.image, f'posts/{self.uploaded}')
+        self.assertTrue(Post.objects.filter(
+            author=new_user,
+            text=form_data.get('text'),
+            group_id=form_data.get('group'),
+            image=f'posts/{self.uploaded}'
+        ).exists())
 
     def test_post_edit_form_test(self):
         """Форма редактирования записи работает"""
