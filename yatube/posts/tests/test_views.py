@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Comment, Group, Post
+from ..models import Comment, Follow, Group, Post
 
 User = get_user_model()
 POST_COUNT: int = 13
@@ -274,3 +274,63 @@ class CacheTest(TestCase):
         # контент первого запроса не должен быть равен контенту третьего
         # т.к. пост удалён и кэш очищен
         self.assertNotEqual(first_response.content, third_response.content)
+
+
+class FollowTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Создаём записи в БД"""
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='leo')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Тестовое описание',
+        )
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text='Тестовый пост',
+            group=cls.group,
+        )
+
+    def setUp(self):
+        """Создаём авторизованного клиента"""
+        self.user_jon = User.objects.create_user(username='jon')
+        self.authorized_client_1 = Client()
+        self.authorized_client_2 = Client()
+        self.authorized_client_1.force_login(self.user_jon)
+        cache.clear()
+
+    def test_profile_follow_unfollow(self):
+        # подписываемся
+        self.authorized_client_1.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.post.author}))
+        follow = Follow.objects.filter(
+            user=self.user_jon, author=self.post.author)
+        # проверяем, что бд создалась подписка
+        self.assertTrue(follow.exists())
+        # отписываемся
+        self.authorized_client_1.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.post.author}))
+        # проверяем, что в бд подписки нет
+        self.assertFalse(follow.exists())
+
+    def test_follow_index(self):
+        # подписываемся
+        self.authorized_client_1.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.user}))
+        new_post = Post.objects.create(author=self.user, text='Новый пост')
+        response_follow_user = self.authorized_client_1.get(
+            reverse('posts:follow_index'))
+        # создаём нового пользователя, который не подписан на автора поста
+        user_sam = User.objects.create_user(username='sam')
+        self.authorized_client_2.force_login(user_sam)
+        response_unfollow_user = self.authorized_client_2.get(
+            reverse('posts:follow_index'))
+        # проверяем, что новый пост появился у подписанного пользователя
+        self.assertContains(response_follow_user, new_post)
+        # проверяем, что новый пост не появился у неподписанного пользователя
+        self.assertNotContains(response_unfollow_user, new_post)
