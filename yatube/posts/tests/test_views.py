@@ -3,18 +3,15 @@ import tempfile
 
 from django import forms
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.test import Client, TestCase, override_settings
+from django.shortcuts import get_list_or_404, get_object_or_404
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase, override_settings
-from django.urls import reverse
 
-from ..models import Comment, Follow, Group, Post
+from ..utils import LIMIT_POSTS
+from ..models import Comment, Follow, Group, Post, User
 
-User = get_user_model()
-POST_COUNT: int = 13
-FIRST_PAGE_COUNT: int = 10
-SECOND_PAGE_COUNT: int = 3
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
@@ -92,20 +89,20 @@ class PostsPagesTests(TestCase):
 
     def test_index_page_show_correct_context(self):
         response = self.authorized_client.get(reverse('posts:index'))
-        expected = list(Post.objects.all())
-        post = response.context.get('page_obj')
+        expected = get_list_or_404(Post)
+        posts = response.context.get('page_obj')
         self.assertEqual(
-            post.object_list, expected
+            posts.object_list, expected
         )
         self.assertEqual(
-            post[0].image, self.post.image
+            posts[0].image, self.post.image
         )
 
     def test_group_list_page_show_correct_context(self):
         response = self.authorized_client.get(
             reverse('posts:group_list', kwargs={'slug': self.group.slug})
         )
-        expected = list(Post.objects.filter(group_id=self.group.id))
+        expected = get_list_or_404(Post, group_id=self.group.id)
         post = response.context.get('page_obj')
         self.assertEqual(
             post.object_list, expected
@@ -118,7 +115,7 @@ class PostsPagesTests(TestCase):
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': self.post.author})
         )
-        expected = list(Post.objects.filter(author_id=self.post.author))
+        expected = get_list_or_404(Post, author_id=self.post.author)
         post = response.context.get('page_obj')
         self.assertEqual(
             post.object_list, expected
@@ -134,7 +131,7 @@ class PostsPagesTests(TestCase):
         form_fields = {
             'text': forms.fields.CharField,
         }
-        expected = Post.objects.filter(id=self.post.id)[0]
+        expected = get_object_or_404(Post, id=self.post.id)
         post = response.context.get('post')
         self.assertEqual(
             response.context.get('post'), expected
@@ -206,7 +203,7 @@ class PaginatorTests(TestCase):
             group=cls.group,
         )
         test_posts: list = []
-        for i in range(POST_COUNT):
+        for i in range(LIMIT_POSTS + 1):
             test_posts.append(cls.post)
         Post.objects.bulk_create(test_posts)
 
@@ -227,24 +224,12 @@ class PaginatorTests(TestCase):
                 )
         for url in urls:
             with self.subTest(url=url):
-                response = self.authorized_client.get(url)
+                response_1_page = self.authorized_client.get(url)
+                response_2_page = self.authorized_client.get(url + '?page=2')
+                self.assertEqual(len(response_1_page.context.get('page_obj')),
+                                 LIMIT_POSTS)
                 self.assertEqual(
-                    len(response.context.get('page_obj')), FIRST_PAGE_COUNT
-                )
-
-    def test_paginator_second_page(self):
-        """Проверяем паджинацию на второй странице"""
-        urls = (reverse('posts:index'),
-                reverse('posts:profile',
-                        kwargs={'username': self.post.author}),
-                reverse('posts:group_list',
-                        kwargs={'slug': self.group.slug}),
-                )
-        for url in urls:
-            with self.subTest(url=url):
-                response = self.authorized_client.get(url + '?page=2')
-                self.assertEqual(
-                    len(response.context.get('page_obj')), SECOND_PAGE_COUNT)
+                    len(response_2_page.context.get('page_obj')), 1)
 
 
 class CacheTest(TestCase):

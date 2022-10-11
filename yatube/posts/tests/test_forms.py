@@ -2,14 +2,12 @@ import shutil
 import tempfile
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.test import Client, TestCase, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from ..models import Group, Post
+from ..models import Group, Post, User
 
-User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
@@ -52,35 +50,35 @@ class PostsFormTests(TestCase):
     def setUp(self):
         """Создаём авторизованного клиента"""
         user = self.user
-        self.authorized_client = Client()
-        self.authorized_client.force_login(user)
+        self.new_user = User.objects.create_user(username='jon')
+        self.authorized_client_1 = Client()
+        self.authorized_client_2 = Client()
+        self.authorized_client_1.force_login(user)
+        self.authorized_client_2.force_login(self.new_user)
 
     def test_create_post_form_test(self):
         """Валидная форма создаёт запись"""
-        new_user = User.objects.create_user(username='jon')
-        self.authorized_client.force_login(new_user)
         count_posts = Post.objects.count()
         form_data = {
             'text': 'Тестовый пост 2',
             'group': self.group.id,
             'image': self.uploaded,
         }
-        response = self.authorized_client.post(
+        response = self.authorized_client_2.post(
             path=reverse('posts:post_create'),
             data=form_data,
             follow=True
         )
         self.assertRedirects(
             response, reverse('posts:profile',
-                              kwargs={'username': new_user})
+                              kwargs={'username': self.new_user})
         )
+        post = Post.objects.first()
         self.assertEqual(Post.objects.count(), count_posts + 1)
-        self.assertTrue(Post.objects.filter(
-            author=new_user,
-            text=form_data.get('text'),
-            group_id=form_data.get('group'),
-            image=f'posts/{self.uploaded}'
-        ).exists())
+        self.assertEqual(post.author, self.new_user)
+        self.assertEqual(post.text, form_data.get('text'))
+        self.assertEqual(post.group.id, form_data.get('group'))
+        self.assertEqual(post.image, f'posts/{self.uploaded}')
 
     def test_post_edit_form_test(self):
         """Форма редактирования записи работает"""
@@ -95,7 +93,7 @@ class PostsFormTests(TestCase):
             'text': 'Редактирование поста',
             'group': new_group.id
         }
-        response = self.authorized_client.post(
+        response = self.authorized_client_1.post(
             path=reverse('posts:post_edit',
                          kwargs={'post_id': self.post.id}),
             data=form_data,
@@ -113,13 +111,13 @@ class PostsFormTests(TestCase):
     def test_comment_post(self):
         """Комментарий оправляется и появляется на странице поста"""
         form_data = {'text': 'Коммент'}
-        response = self.authorized_client.post(
+        response = self.authorized_client_2.post(
             path=reverse('posts:add_comment',
                          kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True,
         )
-        post_page = self.authorized_client.get(
+        post_page = self.authorized_client_2.get(
             reverse('posts:post_detail',
                     kwargs={'post_id': self.post.id})
         )
@@ -131,16 +129,16 @@ class PostsFormTests(TestCase):
 
     def test_comment_post_not_auth(self):
         """Неавторизованный пользователь пытается оставить комментарий"""
-        self.authorized_client.logout()
+        self.authorized_client_2.logout()
         form_data = {'text': 'Коммент'}
         # Неавторизованный пользователь пытается отправить форму
-        response = self.authorized_client.post(
+        response = self.authorized_client_2.post(
             path=reverse('posts:add_comment',
                          kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True,
         )
-        post_page = self.authorized_client.get(
+        post_page = self.authorized_client_2.get(
             reverse('posts:post_detail',
                     kwargs={'post_id': self.post.id})
         )

@@ -10,8 +10,8 @@ from .models import Follow, Group, Post, User
 @cache_page(20, key_prefix='index_page')
 def index(request):
     posts = Post.objects.all()
-    template = 'posts/index.html'
     page_obj = utils.get_page_context(request, posts)
+    template = 'posts/index.html'
     if request.user.is_authenticated:
         follower = request.user.follower.exists()
         context = dict(page_obj=page_obj, follower=follower)
@@ -32,29 +32,26 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author__username=author)
-    post_count = posts.count()
+    posts = author.posts.all()
     page_obj = utils.get_page_context(request, posts)
     if request.user.is_authenticated:
-        following = author.following.filter(user=request.user)
-        context = dict(post_count=post_count,
-                       author=author,
-                       page_obj=page_obj,
-                       following=following)
-        return render(request, 'posts/profile.html', context)
+        following = author.following.filter(user=request.user).exists()
     else:
-        context = dict(post_count=post_count,
-                       author=author,
-                       page_obj=page_obj)
-        return render(request, 'posts/profile.html', context)
+        following = False
+    template = 'posts/profile.html'
+    context = dict(author=author,
+                   page_obj=page_obj,
+                   following=following)
+    return render(request, template, context)
 
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm()
     comments = post.comments.all()
+    template = 'posts/post_detail.html'
     context = dict(post=post, form=form, comments=comments)
-    return render(request, 'posts/post_detail.html', context)
+    return render(request, template, context)
 
 
 @login_required
@@ -102,9 +99,9 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     posts = Post.objects.filter(author__following__user=request.user)
-    template = 'posts/follow.html'
     page_obj = utils.get_page_context(request, posts)
     follower = request.user.follower.exists()
+    template = 'posts/follow.html'
     context = dict(page_obj=page_obj, follower=follower)
     return render(request, template, context)
 
@@ -112,16 +109,18 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     user = request.user
-    author = User.objects.get(username=username)
-    follower = Follow.objects.filter(user=user, author=author)
-    if user != author and not follower.exists():
+    author = get_object_or_404(User, username=username)
+    follower = user.follower.filter(author=author).exists()
+    if user != author and not follower:
         Follow.objects.create(user=user, author=author)
-    return redirect('posts:profile', username=username)
+    template = 'posts:profile'
+    return redirect(template, username=username)
 
 
 @login_required
 def profile_unfollow(request, username):
     user = request.user
-    author = User.objects.get(username=username)
-    Follow.objects.filter(user=user, author=author).delete()
-    return redirect('posts:profile', username=username)
+    author = get_object_or_404(User, username=username)
+    user.follower.filter(author=author).delete()
+    template = 'posts:profile'
+    return redirect(template, username=username)
