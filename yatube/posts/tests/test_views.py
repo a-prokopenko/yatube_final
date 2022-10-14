@@ -3,54 +3,64 @@ import tempfile
 
 from django import forms
 from django.conf import settings
-from django.urls import reverse
-from django.test import Client, TestCase, override_settings
-from django.shortcuts import get_list_or_404, get_object_or_404
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
 
-from ..utils import LIMIT_POSTS
+from ..consts import LIMIT_POSTS, TEST_IMAGE
+from ..consts import TEST_COMMENT, TEST_TEXT, TEST_DESC, TEST_SLUG, TEST_TITLE
 from ..models import Comment, Follow, Group, Post, User
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
-class PostsPagesTests(TestCase):
+class PostPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
         """Создаём записи в БД"""
         super().setUpClass()
         cls.user = User.objects.create_user(username='leo')
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
+        small_gif = TEST_IMAGE
         cls.image = SimpleUploadedFile(
             name='small.gif',
             content=small_gif,
             content_type='image/gif'
         )
         cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='test-slug',
-            description='Тестовое описание',
+            title=TEST_TITLE,
+            slug=TEST_SLUG,
+            description=TEST_DESC,
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text=TEST_TEXT,
             group=cls.group,
             image=cls.image,
         )
         cls.comment = Comment.objects.create(
             post=cls.post,
             author=cls.user,
-            text='Комментарий',
+            text=TEST_COMMENT,
         )
+        cls.templates_pages_names = {
+            reverse('posts:index'): 'posts/index.html',
+            reverse('posts:group_list',
+                    kwargs={'slug': cls.group.slug}
+                    ): 'posts/group_list.html',
+            reverse('posts:profile',
+                    kwargs={'username': cls.post.author}
+                    ): 'posts/profile.html',
+            reverse('posts:post_detail',
+                    kwargs={'post_id': cls.post.id}
+                    ): 'posts/post_detail.html',
+            reverse('posts:post_edit',
+                    kwargs={'post_id': cls.post.id}
+                    ): 'posts/post_create.html',
+            reverse('posts:post_create'): 'posts/post_create.html',
+            reverse('posts:follow_index'): 'posts/follow.html',
+        }
 
     @classmethod
     def tearDownClass(cls):
@@ -59,70 +69,42 @@ class PostsPagesTests(TestCase):
 
     def setUp(self):
         """Создаём авторизованного клиента"""
-        user = self.user
         self.authorized_client = Client()
-        self.authorized_client.force_login(user)
+        self.authorized_client.force_login(self.user)
         cache.clear()
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
-        templates_pages_names = {
-            reverse('posts:index'): 'posts/index.html',
-            reverse('posts:group_list',
-                    kwargs={'slug': self.group.slug}
-                    ): 'posts/group_list.html',
-            reverse('posts:profile',
-                    kwargs={'username': self.post.author}
-                    ): 'posts/profile.html',
-            reverse('posts:post_detail',
-                    kwargs={'post_id': self.post.id}
-                    ): 'posts/post_detail.html',
-            reverse('posts:post_edit',
-                    kwargs={'post_id': self.post.id}
-                    ): 'posts/post_create.html',
-            reverse('posts:post_create'): 'posts/post_create.html',
-        }
-        for reverse_name, template in templates_pages_names.items():
+        for reverse_name, template in self.templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
 
+    def post_asserts(self, post, expected, image):
+        self.assertEqual(post, expected)
+        self.assertEqual(post.image, image)
+
     def test_index_page_show_correct_context(self):
         response = self.authorized_client.get(reverse('posts:index'))
-        expected = get_list_or_404(Post)
-        posts = response.context.get('page_obj')
-        self.assertEqual(
-            posts.object_list, expected
-        )
-        self.assertEqual(
-            posts[0].image, self.post.image
-        )
+        expected = Post.objects.all()[0]
+        post = response.context['page_obj'][0]
+        self.post_asserts(post, expected, self.post.image)
 
     def test_group_list_page_show_correct_context(self):
         response = self.authorized_client.get(
             reverse('posts:group_list', kwargs={'slug': self.group.slug})
         )
-        expected = get_list_or_404(Post, group_id=self.group.id)
-        post = response.context.get('page_obj')
-        self.assertEqual(
-            post.object_list, expected
-        )
-        self.assertEqual(
-            post[0].image, self.post.image
-        )
+        expected = Post.objects.filter(group_id=self.post.group)[0]
+        post = response.context['page_obj'][0]
+        self.post_asserts(post, expected, self.post.image)
 
     def test_profile_page_show_correct_context(self):
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': self.post.author})
         )
-        expected = get_list_or_404(Post, author_id=self.post.author)
-        post = response.context.get('page_obj')
-        self.assertEqual(
-            post.object_list, expected
-        )
-        self.assertEqual(
-            post[0].image, self.post.image
-        )
+        expected = Post.objects.filter(author_id=self.post.author)[0]
+        post = response.context['page_obj'][0]
+        self.post_asserts(post, expected, self.post.image)
 
     def test_post_detail_correct_context(self):
         response = self.authorized_client.get(
@@ -131,14 +113,9 @@ class PostsPagesTests(TestCase):
         form_fields = {
             'text': forms.fields.CharField,
         }
-        expected = get_object_or_404(Post, id=self.post.id)
-        post = response.context.get('post')
-        self.assertEqual(
-            response.context.get('post'), expected
-        )
-        self.assertEqual(
-            post.image, self.post.image
-        )
+        expected = Post.objects.filter(id=self.post.id)[0]
+        post = response.context['post']
+        self.post_asserts(post, expected, self.post.image)
         self.assertIsInstance(
             response.context.get('form').fields.get('text'),
             form_fields.get('text')
@@ -147,33 +124,26 @@ class PostsPagesTests(TestCase):
             response.context.get('comments').get(text=self.comment)
         )
 
-    def test_post_create_correct_context(self):
-        response = self.authorized_client.get(reverse('posts:post_create'))
+    def test_post_create_edit_correct_context(self):
+        responses = [
+            (self.authorized_client.get(reverse('posts:post_create'))),
+            (self.authorized_client.get(
+                reverse('posts:post_edit', kwargs={'post_id': self.post.id})))
+        ]
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField,
         }
         for value, expected in form_fields.items():
             with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
-
-    def test_post_edit_correct_context(self):
-        response = self.authorized_client.get(
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id})
-        )
-        form_fields = {
-            'text': forms.fields.CharField,
-            'group': forms.fields.ChoiceField,
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
+                for response in responses:
+                    form_field = response.context.get('form').fields.get(value)
+                    self.assertIsInstance(form_field, expected)
 
     def test_post_with_group_show_correct(self):
         response = self.authorized_client.get(reverse('posts:index'))
-        post = response.context.get('page_obj')[0]
+        expected = Post.objects.filter(group_id=self.post.group)[0]
+        post = response.context['page_obj'][0]
         urls = (reverse('posts:index'),
                 reverse('posts:profile',
                         kwargs={'username': self.post.author}),
@@ -182,8 +152,7 @@ class PostsPagesTests(TestCase):
                 )
         for url in urls:
             with self.subTest(url=url):
-                self.assertEqual(post.text, self.post.text)
-                self.assertEqual(post.group, self.post.group)
+                self.post_asserts(post, expected, self.post.image)
 
 
 class PaginatorTests(TestCase):
@@ -193,13 +162,13 @@ class PaginatorTests(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='leo')
         cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='test-slug',
-            description='Тестовое описание',
+            title=TEST_TITLE,
+            slug=TEST_SLUG,
+            description=TEST_DESC,
         )
         cls.post = Post(
             author=cls.user,
-            text='Тестовый пост',
+            text=TEST_TEXT,
             group=cls.group,
         )
         test_posts: list = []
@@ -209,9 +178,8 @@ class PaginatorTests(TestCase):
 
     def setUp(self):
         """Создаём авторизованного клиента"""
-        user = self.user
         self.authorized_client = Client()
-        self.authorized_client.force_login(user)
+        self.authorized_client.force_login(self.user)
         cache.clear()
 
     def test_paginator_first_page(self):
@@ -232,20 +200,19 @@ class PaginatorTests(TestCase):
                     len(response_2_page.context.get('page_obj')), 1)
 
 
-class CacheTest(TestCase):
+class CacheTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='leo')
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text=TEST_TEXT,
         )
 
     def setUp(self):
-        user = self.user
         self.authorized_client = Client()
-        self.authorized_client.force_login(user)
+        self.authorized_client.force_login(self.user)
 
     def test_cache_index_page(self):
         first_response = self.authorized_client.get(reverse('posts:index'))
@@ -261,20 +228,20 @@ class CacheTest(TestCase):
         self.assertNotEqual(first_response.content, third_response.content)
 
 
-class FollowTest(TestCase):
+class FollowTests(TestCase):
     @classmethod
     def setUpClass(cls):
         """Создаём записи в БД"""
         super().setUpClass()
         cls.user = User.objects.create_user(username='leo')
         cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='test-slug',
-            description='Тестовое описание',
+            title=TEST_TITLE,
+            slug=TEST_SLUG,
+            description=TEST_DESC,
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text=TEST_TEXT,
             group=cls.group,
         )
 

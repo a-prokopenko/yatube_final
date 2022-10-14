@@ -7,7 +7,7 @@ from .forms import CommentForm, PostForm
 from .models import Follow, Group, Post, User
 
 
-@cache_page(20, key_prefix='index_page')
+@cache_page(1, key_prefix='index_page')
 def index(request):
     posts = Post.objects.all()
     page_obj = utils.get_page_context(request, posts)
@@ -16,9 +16,8 @@ def index(request):
         follower = request.user.follower.exists()
         context = dict(page_obj=page_obj, follower=follower)
         return render(request, template, context)
-    else:
-        context = dict(page_obj=page_obj)
-        return render(request, template, context)
+    context = dict(page_obj=page_obj)
+    return render(request, template, context)
 
 
 def group_posts(request, slug):
@@ -31,17 +30,17 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
+    user = request.user
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     page_obj = utils.get_page_context(request, posts)
-    if request.user.is_authenticated:
-        following = author.following.filter(user=request.user).exists()
-    else:
-        following = False
     template = 'posts/profile.html'
     context = dict(author=author,
                    page_obj=page_obj,
-                   following=following)
+                   following=False)
+    if user.is_authenticated and author.following.filter(user=user):
+        context.update(following=True)
+        return render(request, template, context)
     return render(request, template, context)
 
 
@@ -70,17 +69,16 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
+    if request.user != post.author:
+        return redirect('posts:post_detail', post_id)
     form = PostForm(
         request.POST or None,
         files=request.FILES or None,
         instance=post)
-    context = dict(form=form, is_edit=True, post_id=post_id)
-    if post.author != request.user:
+    if form.is_valid():
+        form.save()
         return redirect('posts:post_detail', post_id)
-    if request.method == 'POST':
-        if form.is_valid():
-            form.save()
-            return redirect('posts:post_detail', post_id)
+    context = dict(form=form, is_edit=True, post_id=post_id)
     return render(request, 'posts/post_create.html', context)
 
 
@@ -110,8 +108,7 @@ def follow_index(request):
 def profile_follow(request, username):
     user = request.user
     author = get_object_or_404(User, username=username)
-    follower = user.follower.filter(author=author).exists()
-    if user != author and not follower:
+    if user != author and not user.follower.filter(author=author):
         Follow.objects.create(user=user, author=author)
     template = 'posts:profile'
     return redirect(template, username=username)
@@ -119,8 +116,7 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    user = request.user
-    author = get_object_or_404(User, username=username)
-    user.follower.filter(author=author).delete()
+    get_object_or_404(Follow, user=request.user,
+                      author__username=username).delete()
     template = 'posts:profile'
     return redirect(template, username=username)

@@ -5,7 +5,11 @@ class CoreViewTest(TestCase):
     def setUp(self):
         self.guest_client = Client()
 
-    def test_404_uses_custom_template(self):
-        response = self.guest_client.get('/page_404/')
-        template = 'core/404.html'
-        self.assertTemplateUsed(response, template)
+    def test_uses_custom_template(self):
+        urls_template = {
+            '/page_404/': 'core/404.html',
+        }
+        for url, template in urls_template.items():
+            with self.subTest(url=url):
+                response = self.guest_client.get(url)
+                self.assertTemplateUsed(response, template)

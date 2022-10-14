@@ -6,7 +6,7 @@ from django.test import Client, TestCase
 User = get_user_model()
 
 
-class UsersURLTests(TestCase):
+class UserURLTests(TestCase):
     def setUp(self):
         self.guest_client = Client()
         self.user = User.objects.create_user(username='leo')

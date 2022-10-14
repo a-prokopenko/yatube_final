@@ -23,11 +23,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('users.urls')),
     path('auth/', include('django.contrib.auth.urls')),
-    path('', include('posts.urls', namespace='posts')),
+    path('', include('posts.urls', namespace='posts'))
 ]
 
-handler404 = 'core.views.page_not_found'
 handler403 = 'core.views.permission_denied'
+handler404 = 'core.views.page_not_found'
 handler500 = 'core.views.server_error'
 
 if settings.DEBUG:
