@@ -4,8 +4,8 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from ..consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
 from ..models import Group, Post, User
-from ..consts import TEST_TEXT, TEST_DESC, TEST_SLUG, TEST_TITLE
 
 
 class PostURLTests(TestCase):

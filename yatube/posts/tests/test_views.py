@@ -8,8 +8,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..consts import LIMIT_POSTS, TEST_IMAGE
-from ..consts import TEST_COMMENT, TEST_TEXT, TEST_DESC, TEST_SLUG, TEST_TITLE
+from ..consts import (LIMIT_POSTS, TEST_COMMENT, TEST_DESC, TEST_IMAGE,
+                      TEST_SLUG, TEST_TEXT, TEST_TITLE)
 from ..models import Comment, Follow, Group, Post, User
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
