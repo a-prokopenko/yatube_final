@@ -1,6 +1,7 @@
 from django.test import TestCase
 
-from ..consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
+from .consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
+from ..consts import POST_LENGTH
 from ..models import Group, Post, User
 
 
@@ -21,7 +22,7 @@ class PostModelTests(TestCase):
 
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
-        self.assertEqual(str(self.post), self.post.text[:15])
+        self.assertEqual(str(self.post), self.post.text[:POST_LENGTH])
         self.assertEqual(str(self.group), self.group.title)
 
     def test_verbose_name_post(self):

@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 
+from .consts import COMMENT_LENGTH, POST_LENGTH
+
 User = get_user_model()
 
 
@@ -50,7 +52,7 @@ class Post(models.Model):
     )
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:POST_LENGTH]
 
     class Meta:
         verbose_name = 'пост'
@@ -78,7 +80,7 @@ class Comment(models.Model):
     )
 
     def __str__(self):
-        return self.text[:200]
+        return self.text[:COMMENT_LENGTH]
 
     class Meta:
         verbose_name = 'комментарий'

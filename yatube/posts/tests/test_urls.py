@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
+from .consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
 from ..models import Group, Post, User
 
 
@@ -32,22 +32,22 @@ class PostURLTests(TestCase):
             '/create/': 'authorized',
             '/follow/': 'authorized',
         }
-        cls.posts_urls_templates = {
-            reverse('posts:index'): 'posts/index.html',
-            reverse('posts:group_list',
-                    kwargs={'slug': cls.group.slug}
-                    ): 'posts/group_list.html',
-            reverse('posts:profile',
-                    kwargs={'username': cls.post.author}
-                    ): 'posts/profile.html',
-            reverse('posts:post_detail',
-                    kwargs={'post_id': cls.post.id}
-                    ): 'posts/post_detail.html',
-            reverse('posts:post_edit',
-                    kwargs={'post_id': cls.post.id}
-                    ): 'posts/post_create.html',
-            reverse('posts:post_create'): 'posts/post_create.html',
-            reverse('posts:follow_index'): 'posts/follow.html',
+        cls.urls_templates = {
+            'posts/index.html': reverse('posts:index'),
+            'posts/group_list.html': reverse(
+                'posts:group_list',
+                kwargs={'slug': cls.group.slug}),
+            'posts/profile.html': reverse(
+                'posts:profile',
+                kwargs={'username': cls.post.author}),
+            'posts/post_detail.html': reverse(
+                'posts:post_detail',
+                kwargs={'post_id': cls.post.id}),
+            'posts/post_create.html': reverse(
+                'posts:post_edit',
+                kwargs={'post_id': cls.post.id}),
+            'posts/post_create.html': reverse('posts:post_create'),
+            'posts/follow.html': reverse('posts:follow_index'),
         }
 
     def setUp(self):
@@ -81,7 +81,7 @@ class PostURLTests(TestCase):
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_urls_uses_correct_template(self):
-        for address, template in self.posts_urls_templates.items():
+        for template, address in self.urls_templates.items():
             with self.subTest(address=address):
                 response = self.author_client.get(address)
                 self.assertTemplateUsed(response, template)
