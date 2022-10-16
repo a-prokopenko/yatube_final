@@ -1,8 +1,8 @@
 from django.test import TestCase
 
-from .consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
 from ..consts import POST_LENGTH
 from ..models import Group, Post, User
+from .consts import TEST_DESC, TEST_SLUG, TEST_TEXT, TEST_TITLE
 
 
 class PostModelTests(TestCase):

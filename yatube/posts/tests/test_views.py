@@ -8,10 +8,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from .consts import (TEST_COMMENT, TEST_DESC, TEST_IMAGE, TEST_SLUG, TEST_TEXT,
-                     TEST_TITLE)
 from ..consts import LIMIT_POSTS
 from ..models import Comment, Follow, Group, Post, User
+from .consts import (TEST_COMMENT, TEST_DESC, TEST_IMAGE, TEST_SLUG, TEST_TEXT,
+                     TEST_TITLE)
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -59,21 +59,17 @@ class PostPagesTests(TestCase):
             'follow': reverse('posts:follow_index'),
         }
         cls.urls_templates = {
-            'posts/index.html': reverse('posts:index'),
-            'posts/group_list.html': reverse(
-                'posts:group_list',
-                kwargs={'slug': cls.group.slug}),
-            'posts/profile.html': reverse(
-                'posts:profile',
-                kwargs={'username': cls.post.author}),
-            'posts/post_detail.html': reverse(
-                'posts:post_detail',
-                kwargs={'post_id': cls.post.id}),
-            'posts/post_create.html': reverse(
-                'posts:post_edit',
-                kwargs={'post_id': cls.post.id}),
-            'posts/post_create.html': reverse('posts:post_create'),
-            'posts/follow.html': reverse('posts:follow_index'),
+            reverse('posts:index'): 'posts/index.html',
+            reverse('posts:group_list', kwargs={'slug': cls.group.slug}):
+                'posts/group_list.html',
+            reverse('posts:profile', kwargs={'username': cls.post.author}):
+                'posts/profile.html',
+            reverse('posts:post_detail', kwargs={'post_id': cls.post.id}):
+                'posts/post_detail.html',
+            reverse('posts:post_edit', kwargs={'post_id': cls.post.id}):
+                'posts/post_create.html',
+            reverse('posts:post_create'): 'posts/post_create.html',
+            reverse('posts:follow_index'): 'posts/follow.html',
         }
 
     @classmethod
@@ -89,9 +85,9 @@ class PostPagesTests(TestCase):
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
-        for template, reverse_name in self.urls_templates.items():
-            with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(reverse_name)
+        for address, template in self.urls_templates.items():
+            with self.subTest(address=address):
+                response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
 
     def post_asserts(self, post, expected, image):
@@ -225,6 +221,7 @@ class CacheTests(TestCase):
         cls.urls = {
             'index': reverse('posts:index')
         }
+
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)

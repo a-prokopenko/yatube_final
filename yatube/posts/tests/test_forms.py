@@ -6,10 +6,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from .consts import (TEST_DESC, TEST_IMAGE, TEST_SLUG, TEST_TEXT, TEST_TITLE,
-                     TEST_TITLE2, TEST_SLUG2, TEST_TEXT2, TEST_EDIT_TEXT,
-                     TEST_COMMENT, TEST_AUTHOR)
 from ..models import Comment, Group, Post, User
+from .consts import (TEST_AUTHOR, TEST_COMMENT, TEST_DESC, TEST_EDIT_TEXT,
+                     TEST_IMAGE, TEST_SLUG, TEST_SLUG2, TEST_TEXT, TEST_TEXT2,
+                     TEST_TITLE, TEST_TITLE2)
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -216,7 +216,7 @@ class PostFormTests(TestCase):
         # Неавторизованный пользователь редиректится на страницу логина
         self.assertRedirects(
             response, self.urls_templates['login']
-                       + f'?next=/posts/{self.post.id}/comment/')
+            + f'?next=/posts/{self.post.id}/comment/')
         # Комментарий от неавторизованного пользователя не появляется
         self.assertNotContains(post_page, form_data.get('text'))
         # Количество комментариев не увеличилось
