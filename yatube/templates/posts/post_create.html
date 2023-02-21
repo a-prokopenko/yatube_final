@@ -45,6 +45,11 @@
               </div>
             {% endfor %}
             <div class="d-flex justify-content-end">
+              {% if is_edit %}
+              <div class="col text-left">
+                <a class="btn btn-primary" href="{% url 'posts:post_delete' post_id %}">
+                Удалить
+            </a> </div>{% endif %}
               <button type="submit" class="btn btn-primary">
                 Сохранить
               </button>
