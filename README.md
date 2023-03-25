@@ -44,7 +44,7 @@ python3 yatube/manage.py migrate
 ```
 5. Заполните БД начальными данными:
 ```bash
-python3 yatube/manage.py migrate
+python3 yatube/manage.py loaddata yatube/data.json
 ```
 6. Запустить проект:
 ```bash
