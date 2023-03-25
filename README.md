@@ -50,3 +50,5 @@ python3 yatube/manage.py loaddata yatube/data.json
 ```bash
 python3 yatube/manage.py runserver
 ```
+
+Развёрнутый проект доступен по адресу http://127.0.0.1:8000/
