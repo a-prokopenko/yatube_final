@@ -42,7 +42,11 @@ pip install -r requirements.txt
 ```bash
 python3 yatube/manage.py migrate
 ```
-5. Запустить проект:
+5. Заполните БД начальными данными:
+```bash
+python3 yatube/manage.py migrate
+```
+6. Запустить проект:
 ```bash
 python3 yatube/manage.py runserver
 ```
