@@ -29,10 +29,21 @@ git clone https://github.com/a-prokopenko/yatube_final.git
 ```
 2. Перейти в директорию проекта, создать и активировать виртуальное окружение:
 ```bash
-cd yatube_final/
+cd api_final_yatube/
 python3 -m venv venv
-source venv/bin/activate
 ```
+
+* Если у вас Linux/macOS
+
+    ```bash
+    source env/bin/activate
+    ```
+
+* Если у вас Windows
+
+    ```bash
+    source env/scripts/activate
+    ```
 3. Установить зависимости из файла ```requirements.txt```:
 ```bash
 python3 -m pip install --upgrade pip
