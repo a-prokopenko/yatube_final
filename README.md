@@ -25,7 +25,7 @@ Yatube - социальная сеть для авторов и подписчи
 ## Установка и запуск
 1. Клонировать репозиторий:
 ```bash
-git@github.com:a-prokopenko/yatube_final.git
+git clone https://github.com/a-prokopenko/yatube_final.git
 ```
 2. Перейти в директорию проекта, создать и активировать виртуальное окружение:
 ```bash
