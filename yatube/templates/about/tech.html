@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load thumbnail %}
 
 {% block title %}Технологии{% endblock %}
 {% block title_name %}{% endblock %}
@@ -21,7 +22,9 @@
     </aside>
     <article class="col-12 col-md-9">
       На этой странице вы можете ознакомиться со списком технологий, с помощью которых был создан данный проект
-      <img src="{% static 'img/mem.png' %}" width="900" height="630">
+      {% thumbnail 'img/mem.png' "960x339" crop="center" upscale=True as im %}
+      <img class="card-img my-2" src="{% static 'img/mem.png' %}">
+      {% endthumbnail %}
     </article>
   </div>
 {% endblock %}

@@ -7,7 +7,7 @@ from .forms import CommentForm, PostForm
 from .models import Follow, Group, Post, User
 
 
-@cache_page(20, key_prefix='index_page')
+@cache_page(1, key_prefix='index_page')
 def index(request):
     posts = Post.objects.all()
     page_obj = utils.get_page_context(request, posts)
@@ -80,6 +80,15 @@ def post_edit(request, post_id):
         return redirect('posts:post_detail', post_id)
     context = dict(form=form, is_edit=True, post_id=post_id)
     return render(request, 'posts/post_create.html', context)
+
+
+@login_required
+def post_delete(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    if request.user != post.author:
+        return redirect('posts:post_detail', post_id)
+    post.delete()
+    return redirect('posts:profile', request.user)
 
 
 @login_required

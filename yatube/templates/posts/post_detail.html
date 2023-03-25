@@ -51,7 +51,7 @@
       {% if request.user.is_authenticated %}
         {% if request.user == post.author %}
           <a class="btn btn-primary" href="{% url 'posts:post_edit' post.pk %}">
-            редактировать запись
+            Редактировать запись
           </a>
         {% endif %}
         <div class="card my-4">

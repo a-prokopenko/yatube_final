@@ -24,9 +24,11 @@
           </div>
           <div class="card-body">
             {% if is_edit %}
-              <form method="post" enctype="multipart/form-data" action="{% url 'posts:post_edit' post_id %}">
+              <form method="post" enctype="multipart/form-data"
+                    action="{% url 'posts:post_edit' post_id %}">
             {% else %}
-              <form method="post" enctype="multipart/form-data" action="{% url 'posts:post_create' %}">
+              <form method="post" enctype="multipart/form-data"
+                    action="{% url 'posts:post_create' %}">
             {% endif %}
             {% csrf_token %}
             {% for field in form %}
@@ -45,6 +47,13 @@
               </div>
             {% endfor %}
             <div class="d-flex justify-content-end">
+              {% if is_edit %}
+                <div class="col text-left">
+                  <a class="btn btn-primary"
+                     href="{% url 'posts:post_delete' post_id %}">
+                    Удалить </a>
+                </div>
+              {% endif %}
               <button type="submit" class="btn btn-primary">
                 Сохранить
               </button>
