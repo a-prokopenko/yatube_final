@@ -36,7 +36,7 @@ source venv/bin/activate
 3. Установить зависимости из файла ```requirements.txt```:
 ```bash
 python3 -m pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.txt --no-cache-dir
 ```
 4. Выполнить миграции:
 ```bash
