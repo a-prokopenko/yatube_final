@@ -143,3 +143,7 @@ dmypy.json
 .history/
 
 .mypy_cache
+
+# database
+*.sqlite3
+db.sqlite3:Zone.Identifier
