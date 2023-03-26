@@ -23,11 +23,11 @@ Yatube - социальная сеть для авторов и подписчи
 - Windows/Linux/MacOS
 
 ## Установка и запуск
-1. Клонировать репозиторий:
+1. Склонируйте данный репозиторий командой:
 ```bash
 git clone https://github.com/a-prokopenko/yatube_final.git
 ```
-2. Перейти в директорию проекта, создать и активировать виртуальное окружение:
+2. Перейдите в директорию проекта, создайте и активируйте виртуальное окружение следующими командами:
 ```bash
 cd api_final_yatube/
 python3 -m venv venv
@@ -44,20 +44,20 @@ python3 -m venv venv
     ```bash
     source env/scripts/activate
     ```
-3. Установить зависимости из файла ```requirements.txt```:
+3. Установите зависимости из файла `requirements.txt` командой:
 ```bash
 python3 -m pip install --upgrade pip
 pip install -r requirements.txt --no-cache-dir
 ```
-4. Выполнить миграции:
+4. Выполните миграции командой:
 ```bash
 python3 yatube/manage.py migrate
 ```
-5. Заполните БД начальными данными:
+5. Заполните БД начальными данными командой:
 ```bash
 python3 yatube/manage.py loaddata yatube/data.json
 ```
-6. Запустить проект:
+6. Запустить проект командой:
 ```bash
 python3 yatube/manage.py runserver
 ```
