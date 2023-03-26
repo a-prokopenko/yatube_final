@@ -29,7 +29,7 @@ git clone https://github.com/a-prokopenko/yatube_final.git
 ```
 2. Перейдите в директорию проекта, создайте и активируйте виртуальное окружение следующими командами:
 ```bash
-cd api_final_yatube/
+cd yatube_final/
 python3 -m venv venv
 ```
 
